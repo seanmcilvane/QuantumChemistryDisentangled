@@ -1,0 +1,41 @@
+from qiskit import *
+from qiskit import QuantumCircuit
+import numpy as np
+import matplotlib
+from matplotlib import pyplot as plt
+from qiskit.visualization import plot_histogram
+from MerminPeres import MerminPeresCircuit
+import qiskit_braket_provider
+from qiskit_braket_provider import AWSBraketProvider
+import time
+from matplotlib.pyplot import axhline
+
+
+def run_quantum_on_braket(qdevice, quantum_circuit, shots = 1024):
+    
+    device = AWSBraketProvider().get_backend(f'{qdevice}')
+    
+    counts = {}
+    
+    task = device.run(quantum_circuit, shots=shots)
+    retrieved_job = device.retrieve_job(job_id=task.job_id())
+    retrieved_job.status()
+        
+    while retrieved_job.status() != 'COMPLETED':
+        time.sleep(10) # Wait 10 seconds before querying job status again
+        try:
+          counts["counts{0}{1}".format(x,y)] = retrieved_job.result().get_counts()
+            break
+        except:
+            continue
+        
+            fig = plot_histogram(counts["counts{0}{1}".format(x,y)],  figsize = (7,7))
+            fig.savefig('merminperes-braket-{2}-{0}{1}.png'.format(x, y, qdevice), bbox_inches = 'tight', pad_inches = .25)
+        
+            file = open('merminperes-braket-{2}-{0}{1}-counts.txt'.format(x, y, qdevice), 'a')
+            file.write(str(counts["counts{0}{1}".format(x,y)]))
+            file.close()
+        
+    return counts
+
+
