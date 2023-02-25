@@ -30,13 +30,13 @@ def create_hamiltonian(source_path):
             op_penny =  qml.Identity(wires=0)
             for i, pauli in enumerate(op):
                 if pauli == 'I':
-                    op_penny = op_penny @ qml.Identity(wires=i) 
+                    op_penny = op_penny @ qml.Identity(wires=i)
                 elif pauli == 'X':
-                    op_penny = op_penny @ qml.PauliX(wires=i) 
+                    op_penny = op_penny @ qml.PauliX(wires=i)
                 elif pauli == 'Y':
-                    op_penny = op_penny @ qml.PauliY(wires=i) 
+                    op_penny = op_penny @ qml.PauliY(wires=i)
                 elif pauli == 'Z':
-                    op_penny = op_penny @ qml.PauliZ(wires=i)    
+                    op_penny = op_penny @ qml.PauliZ(wires=i)
 
             coefs.append(coef)
             ops.append(op_penny)
@@ -64,7 +64,7 @@ if __name__ == "__main__":
     dev = qml.device(args.device, wires=qubits)
 
     # Define the qnode
-    @qml.qnode(dev) 
+    @qml.qnode(dev)
     def circuit(params, wires, reps, skip_final_rotation_layer):
         pind = 0
         for _ in range(reps):
@@ -76,7 +76,7 @@ if __name__ == "__main__":
             for wire in range(0, len(wires)-1):
                 qml.CNOT(wires=[wire, wire+1])
             qml.Barrier(only_visual=True)
-        
+
         if not skip_final_rotation_layer:
             for wire in wires:
                 qml.RY(params[pind], wires=wire)
@@ -84,14 +84,14 @@ if __name__ == "__main__":
                 pind += 2
 
         return qml.expval(H)
-    
+
     def cost_function(params, **arg):
         h_expval = circuit(params, **arg)
         coef = 1
         if args.positive_energy_flag:
             coef = -1
         return coef * h_expval
-    
+
     nr_params = (args.reps+1)*len(wires)*2
     if args.skip_final_rotation_layer:
         nr_params -= len(wires)*2
@@ -106,15 +106,14 @@ if __name__ == "__main__":
     prev_energy = 0
     for n in range(1000):
         params, energy = optimizer.step_and_cost(cost_function, params,
-                                                wires=range(qubits), reps=args.reps, 
+                                                wires=range(qubits), reps=args.reps,
                                                 skip_final_rotation_layer=args.skip_final_rotation_layer)
 
-        
+
         if args.positive_energy_flag:
             energy *= -1
-        
+
         print("step = {:},  E = {:.8f}".format(n, energy))
         if abs(energy - prev_energy) < 0.0000000005: # depending on precision
             break
         prev_energy = energy
-
