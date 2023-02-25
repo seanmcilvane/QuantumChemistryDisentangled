@@ -1,7 +1,13 @@
 from qiskit import QuantumCircuit, Aer, transpile
 import numpy as np
+import pennylane as qml
 
-def simulate_quantum_ibmq(simulator: str, quantum_circuit: QuantumCircuit, num_shots: int):
+def simulate_quantum_ibmq(simulator: str, quantum_circuit: QuantumCircuit, num_of_wires: int, num_shots: int):
+    
+    device = qml.device(simulator, num_of_wires)
+    
+    
+
     backend = Aer.get_backend(simulator)
     transpiled_quantum_circuit = transpile(quantum_circuit, backend)
     job_simulation = backend.run(transpiled_quantum_circuit, num_shots)
@@ -11,5 +17,5 @@ def simulate_quantum_ibmq(simulator: str, quantum_circuit: QuantumCircuit, num_s
     return counts
 
 
-
+def run_quantum_ibmq()
 

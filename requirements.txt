@@ -1,0 +1,4 @@
+qiskit
+pennylane
+amazon-braket-pennylane-plugin
+pennylane-qiskit
