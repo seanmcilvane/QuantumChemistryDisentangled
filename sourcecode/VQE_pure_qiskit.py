@@ -1,9 +1,13 @@
-import pennylane as qml
-from pennylane import numpy as np
+import numpy as np
 import argparse
 import qiskit
+from qiskit.algorithms import VQE
 from qiskit import *
+from qiskit import QuantumCircuit
 from pennylane_qiskit import vqe_runner, upload_vqe_runner
+from qiskit.opflow.primitive_ops import PauliSumOp
+from qiskit.primitives import Estimator
+from qiskit_nature.second_q.algorithms import GroundStateEigensolver
 
 def create_hamiltonian(source_path):
     """
@@ -15,7 +19,7 @@ def create_hamiltonian(source_path):
     """
     coefs = []
     ops = []
-
+    pauli_op = []
     #translating from file's default format to Pennylane notation
     with open(source_path, "r") as f:
         f.readline()
@@ -27,24 +31,31 @@ def create_hamiltonian(source_path):
             #parsing a single line
             coef_op = line.split("*")
             coef = float(coef_op[0].strip().replace(" ", ""))
-            op = [o for o in coef_op[1].strip()]
+            op = str(coef_op[1].strip())
+            coef_op[0] = op
+            coef_op[1] = coef
+            #op = [o for o in coef_op[1].strip()]
+            print(coef_op)
+            print(coef)
+            print(op)
 
-            #creating a pennylane format operator
-            op_penny =  qml.Identity(wires=0)
-            for i, pauli in enumerate(op):
-                if pauli == 'I':
-                    op_penny = op_penny @ qml.Identity(wires=i) 
-                elif pauli == 'X':
-                    op_penny = op_penny @ qml.PauliX(wires=i) 
-                elif pauli == 'Y':
-                    op_penny = op_penny @ qml.PauliY(wires=i) 
-                elif pauli == 'Z':
-                    op_penny = op_penny @ qml.PauliZ(wires=i)    
+            formatted_op = 0
 
-            coefs.append(coef)
-            ops.append(op_penny)
+            # #creating a pennylane format operator
+            # op_penny =  qml.Identity(wires=0)
+            # for i, pauli in enumerate(op):
+            #     if pauli == 'I':
+            #         op_penny = op_penny @ qml.Identity(wires=i) 
+            #     elif pauli == 'X':
+            #         op_penny = op_penny @ qml.PauliX(wires=i) 
+            #     elif pauli == 'Y':
+            #         op_penny = op_penny @ qml.PauliY(wires=i) 
+            #     elif pauli == 'Z':
+            #         op_penny = op_penny @ qml.PauliZ(wires=i)    
 
-    H = qml.Hamiltonian(coefs, ops)
+            pauli_op.append(coef_op)
+    
+    H = PauliSumOp.from_list([op for op in pauli_op])
     return H
 
 if __name__ == "__main__":
@@ -57,8 +68,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     H = create_hamiltonian(args.source_path)
-    wires = list(H.wires)
-    qubits=len(wires)
+    num_of_qubits = H.num_qubits
+    #print(num_of_qubits)
+    #print(H)
 
     np.random.seed(42)
 
@@ -67,58 +79,77 @@ if __name__ == "__main__":
     program_id = upload_vqe_runner(hub="ibm-q", group="open", project="main")
     # Define the qnode
     #@qml.qnode(dev) 
-    def circuit(params, wires, reps, skip_final_rotation_layer):
+    def ansatz(params, num_of_qubits, reps, skip_final_rotation_layer):
         pind = 0
+        quantum_circuit = QuantumCircuit(num_of_qubits, num_of_qubits)
+
         for _ in range(reps):
-            for wire in wires:
-                qml.RY(params[pind], wires=wire)
-                qml.RZ(params[pind+1], wires=wire)
+            for qubit in range(num_of_qubits):
+                quantum_circuit.ry(params[pind], qubit)
+                quantum_circuit.rz(params[pind+1], qubit)
                 pind += 2
-            qml.Barrier(only_visual=True)
-            for wire in range(0, len(wires)-1):
-                qml.CNOT(wires=[wire, wire+1])
-            qml.Barrier(only_visual=True)
+          
+            for qubit in range(0, num_of_qubits-1):
+                quantum_circuit.cx(qubit, qubit+1)
+            
         
         if not skip_final_rotation_layer:
-            for wire in wires:
-                qml.RY(params[pind], wires=wire)
-                qml.RZ(params[pind+1], wires=wire)
+            for qubit in range(num_of_qubits):
+                quantum_circuit.ry(params[pind], qubit)
+                quantum_circuit.rz(params[pind+1], qubit)
                 pind += 2
-
-        return qml.expval(H)
+        
+        quantum_circuit.measure_all()
+        #return qml.expval(H)
+        return quantum_circuit
     
     def cost_function(params, **arg):
-        h_expval = circuit(params, **arg)
+        
+        
+        h_expval = ansatz(params, **arg)
         coef = 1
         if args.positive_energy_flag:
             coef = -1
         return coef * h_expval
     
-    nr_params = (args.reps+1)*len(wires)*2
+    nr_params = (args.reps+1)*num_of_qubits*2
     if args.skip_final_rotation_layer:
-        nr_params -= len(wires)*2
+        nr_params -= num_of_qubits*2
 
     # Define the initial values of the circuit parameters
     params = np.random.normal(0, np.pi, nr_params)
     print(params)
-    print(params[0])
-    qc = circuit(params=params, wires=wires, reps = args.reps, skip_final_rotation_layer= args.skip_final_rotation_layer)
-    # Define the optimizer
-    optimizer = qml.AdamOptimizer(stepsize=0.1)
+    backend = Aer.get_backend('qasm_simulator')
 
-    job = vqe_runner(
-            program_id=program_id,
-            backend="ibmq_qasm_simulator",
-            hamiltonian=H,
-            ansatz=circuit,
-            x0=params,
-            shots=1024,
-            optimizer="SPSA",
-            optimizer_config={"maxiter": 40},
-            kwargs={"hub": "ibm-q", "group": "open", "project": "main"})
+    a = VQE(ansatz = ansatz(params = params,
+                            num_of_qubits = num_of_qubits,
+                            reps = args.reps,
+                            skip_final_rotation_layer = args.skip_final_rotation_layer),
+                            optimizer = None,
+                            initial_point = params,
+                            expectation = H,
+                            quantum_instance = backend)
+
+
+    a.compute_minimum_eigenvalue(H)
+    print(a.optimal_value)
+    #qc = circuit(params=params, wires=wires, reps = args.reps, skip_final_rotation_layer= args.skip_final_rotation_layer)
+    # Define the optimizer
+    #optimizer = qml.AdamOptimizer(stepsize=0.1)
+
+    # job = vqe_runner(
+    #         program_id=program_id,
+    #         backend="ibmq_qasm_simulator",
+    #         hamiltonian=H,
+    #         ansatz=circuit,
+    #         x0=params,
+    #         shots=1024,
+    #         optimizer="SPSA",
+    #         optimizer_config={"maxiter": 40},
+    #         kwargs={"hub": "ibm-q", "group": "open", "project": "main"})
 
     # Optimize the circuit parameters and compute the energy
-    print(job)
+  
     
     # prev_energy = 0
     # for n in range(1000):
