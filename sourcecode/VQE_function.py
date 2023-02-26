@@ -1,7 +1,7 @@
 
 import pennylane as qml
 from pennylane import numpy as np
-from VQE_pennylane import create_hamiltonian
+from VQE_braket import create_hamiltonian
 
 
 def run_vqe(device:str, source_path:str, positive_energy_flag:str, reps:int, skip_final_rotation_layer:str):
@@ -14,7 +14,13 @@ def run_vqe(device:str, source_path:str, positive_energy_flag:str, reps:int, ski
     np.random.seed(42)
 
     # Define the device
-    dev = qml.device(device, wires=qubits)
+    if device == "braket.aws.qubit":
+        dev = qml.device(device, 
+                        device_arn='arn:aws:braket:::device/quantum-simulator/amazon/sv1',
+                        wires=qubits)
+
+    else: 
+        dev = qml.device(device, wires=qubits)
 
     # Define the qnode
     @qml.qnode(dev) 
@@ -61,9 +67,10 @@ def run_vqe(device:str, source_path:str, positive_energy_flag:str, reps:int, ski
     # Optimize the circuit parameters and compute the energy
     prev_energy = 0
 
+
     n_list = []
     energy_list = []
-    print(circuit())
+
     for n in range(1000):
         params, energy = optimizer.step_and_cost(cost_function, params,
                                                 wires=range(qubits), reps=reps, 

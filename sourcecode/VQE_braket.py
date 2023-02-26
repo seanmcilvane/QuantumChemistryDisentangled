@@ -26,13 +26,13 @@ def create_hamiltonian(source_path):
             coef_op = line.split("*")
             coef = float(coef_op[0].strip().replace(" ", ""))
             op = [o for o in coef_op[1].strip()]
-            print(op)
+    
             #creating a pennylane format operator
             op_penny =  qml.Identity(wires=0)
             for i, pauli in enumerate(op):
 
                 if i == 0:
-                    print("d")
+                  
                     if pauli == 'I':
                         op_penny = qml.Identity(wires=i) 
                     elif pauli == 'X':
@@ -54,13 +54,8 @@ def create_hamiltonian(source_path):
 
             coefs.append(coef)
             ops.append(op_penny)
-            print(len(ops))
-      
-    print(ops[2])
 
     H = qml.Hamiltonian(coefs, ops)
-    #print(H.ops)
-  
     return H
 
 if __name__ == "__main__":
@@ -83,7 +78,7 @@ if __name__ == "__main__":
 
     # Define the device
     if args.device == "braket.local.qubit":
-        dev = qml.device(args.device, wires = qubits, shots = 1000)
+        dev = qml.device(args.device, wires = qubits)
 
     else:
 
@@ -97,7 +92,6 @@ if __name__ == "__main__":
         pind = 0
         for _ in range(reps):
             for wire in wires:
-                print("wire", wire)
                 qml.RY(params[pind], wires=wire)
                 qml.RZ(params[pind+1], wires=wire)
                 pind += 2
@@ -136,7 +130,7 @@ if __name__ == "__main__":
 
     # Define the initial values of the circuit parameters
     params = np.random.normal(0, np.pi, nr_params)
-    print(params)
+   
     
     #circuit(params = params, wires = wires, reps = args.reps, skip_final_rotation_layer= args.skip_final_rotation_layer)
     
@@ -146,8 +140,6 @@ if __name__ == "__main__":
     # Optimize the circuit parameters and compute the energy
     prev_energy = 0
     for n in range(1000):
-        print("n", n)
-        print(params, range(qubits), args.reps)
     
         params, energy = optimizer.step_and_cost(cost_function, params,
                                                 wires=range(qubits), reps=args.reps, 

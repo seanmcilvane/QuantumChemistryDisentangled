@@ -27,8 +27,21 @@ def create_hamiltonian(source_path):
             op = [o for o in coef_op[1].strip()]
 
             #creating a pennylane format operator
-            op_penny =  qml.Identity(wires=0)
+            #op_penny =  qml.Identity(wires=0)
             for i, pauli in enumerate(op):
+
+                if i == 0:
+                  
+                    if pauli == 'I':
+                        op_penny = qml.Identity(wires=i) 
+                    elif pauli == 'X':
+                        op_penny = qml.PauliX(wires=i) 
+                    elif pauli == 'Y':
+                        op_penny = qml.PauliY(wires=i) 
+                    elif pauli == 'Z':
+                        op_penny = qml.PauliZ(wires=i)   
+                    continue
+                
                 if pauli == 'I':
                     op_penny = op_penny @ qml.Identity(wires=i)
                 elif pauli == 'X':
