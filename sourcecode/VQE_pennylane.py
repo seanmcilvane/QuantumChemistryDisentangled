@@ -2,6 +2,8 @@ import pennylane as qml
 from pennylane import numpy as np
 import argparse
 from pennylane.transforms import mitigate_with_zne
+import time
+
 
 
 def create_hamiltonian(source_path):
@@ -101,6 +103,7 @@ if __name__ == "__main__":
                 qml.RY(params[pind], wires=wire)
                 qml.RZ(params[pind+1], wires=wire)
                 pind += 2
+        
 
         return qml.expval(H)
     
@@ -114,7 +117,7 @@ if __name__ == "__main__":
 
         qnode_noisy = qml.QNode(circuit, dev_noisy)
 
-        scale_factors = [1, 2, 3]
+        scale_factors = [1, 2]
 
 
         qnode = mitigate_with_zne(
@@ -125,7 +128,16 @@ if __name__ == "__main__":
 
 
     def cost_function(params, **arg):
+        print("starting h_expval")
+        start = time.perf_counter()
         h_expval = qnode(params, **arg)
+        end = time.perf_counter()
+        ms = (end-start)
+        print(f"Elapsed {ms:.03f} secs.")
+
+
+
+
         coef = 1
         if args.positive_energy_flag:
             coef = -1
@@ -139,7 +151,7 @@ if __name__ == "__main__":
     params = np.random.normal(0, np.pi, nr_params)
 
     # Define the optimizer
-    optimizer = qml.AdamOptimizer(stepsize=0.1)
+    optimizer = qml.AdamOptimizer(stepsize=0.5)
 
     # Optimize the circuit parameters and compute the energy
     prev_energy = 0
@@ -148,7 +160,7 @@ if __name__ == "__main__":
                                                 wires=range(qubits), reps=args.reps,
                                                 skip_final_rotation_layer=args.skip_final_rotation_layer)
 
-
+        print("did optimize")
         if args.positive_energy_flag:
             energy *= -1
 
