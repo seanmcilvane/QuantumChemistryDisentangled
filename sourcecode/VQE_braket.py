@@ -30,7 +30,19 @@ def create_hamiltonian(source_path):
             #creating a pennylane format operator
             op_penny =  qml.Identity(wires=0)
             for i, pauli in enumerate(op):
-                print(i)
+
+                if i == 0:
+                    print("d")
+                    if pauli == 'I':
+                        op_penny = qml.Identity(wires=i) 
+                    elif pauli == 'X':
+                        op_penny = qml.PauliX(wires=i) 
+                    elif pauli == 'Y':
+                        op_penny = qml.PauliY(wires=i) 
+                    elif pauli == 'Z':
+                        op_penny = qml.PauliZ(wires=i)   
+                    continue
+
                 if pauli == 'I':
                     op_penny = op_penny @ qml.Identity(wires=i) 
                 elif pauli == 'X':
@@ -42,12 +54,13 @@ def create_hamiltonian(source_path):
 
             coefs.append(coef)
             ops.append(op_penny)
-       
-        #print(len(ops[0]))
-        print(len(coefs))
+            print(len(ops))
+      
+    print(ops[2])
 
     H = qml.Hamiltonian(coefs, ops)
-    print(H)
+    #print(H.ops)
+  
     return H
 
 if __name__ == "__main__":
@@ -60,26 +73,26 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     H = create_hamiltonian(args.source_path)
-    print("H ops", H.ops)
-    print("H wires", H.wires)
-    print(" target", H.terms())
+  
     wires = list(H.wires)
-    print(wires)
+
     qubits=len(wires)
-    print(qubits)
+
 
     np.random.seed(42)
 
     # Define the device
-    dev = qml.device(args.device, wires = qubits)
+    if args.device == "braket.local.qubit":
+        dev = qml.device(args.device, wires = qubits, shots = 1000)
 
-    # dev = qml.device(args.device, 
-    #                 device_arn='arn:aws:braket:us-west-1::device/quantum-simulator/amazon/sv1',
-    #                 s3 = ("vqebraketresults", "my-prefix"),
-    #                 wires=qubits)
+    else:
 
+        dev = qml.device(args.device, 
+                        device_arn='arn:aws:braket:::device/quantum-simulator/amazon/sv1',
+                        wires=qubits)
+    #s3 = ("vqebraketresults", "my-prefix")
     # Define the qnode
-    @qml.qnode(dev) 
+    @qml.qnode(dev)
     def circuit(params, wires, reps, skip_final_rotation_layer):
         pind = 0
         for _ in range(reps):
@@ -88,22 +101,28 @@ if __name__ == "__main__":
                 qml.RY(params[pind], wires=wire)
                 qml.RZ(params[pind+1], wires=wire)
                 pind += 2
-            #qml.Barrier(only_visual=True)
+            qml.Barrier(only_visual=True)
             for wire in range(0, len(wires)-1):
                 qml.CNOT(wires=[wire, wire+1])
-            #qml.Barrier(only_visual=True)
+            qml.Barrier(only_visual=True)
         
         if not skip_final_rotation_layer:
             for wire in wires:
                 qml.RY(params[pind], wires=wire)
                 qml.RZ(params[pind+1], wires=wire)
                 pind += 2
-        #print(qml.expval(H))
+        
+
         expectation_value = qml.expval(H)
-        #expectation_value = qml.expval(qml.PauliZ([0]))
-        print(expectation_value)
+        #print(qml.operation.Tensor(H))
+        #expectation_value = qml.expval(qml.operation.Tensor(H))
+        #print("exp",expectation_value)
+        #observables = [[qml.Identity(i)] for i in range(wires)]
+        #return qml.expval(qml.operation.Tensor(*observables))
+        #return qml.expval(qml.PauliX(0) @ qml.PauliY(1))
+        #return qml.expval(H.ops)
         return expectation_value
-    
+        
     def cost_function(params, **arg):
         h_expval = circuit(params, **arg)
         coef = 1
@@ -118,7 +137,8 @@ if __name__ == "__main__":
     # Define the initial values of the circuit parameters
     params = np.random.normal(0, np.pi, nr_params)
     print(params)
-    #qml.draw(circuit(params = params, wires = wires, reps = args.reps, skip_final_rotation_layer= args.skip_final_rotation_layer))
+    
+    #circuit(params = params, wires = wires, reps = args.reps, skip_final_rotation_layer= args.skip_final_rotation_layer)
     
     # Define the optimizer
     optimizer = qml.AdamOptimizer(stepsize=0.1)

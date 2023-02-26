@@ -63,7 +63,7 @@ def run_vqe(device:str, source_path:str, positive_energy_flag:str, reps:int, ski
 
     n_list = []
     energy_list = []
-
+    print(circuit())
     for n in range(1000):
         params, energy = optimizer.step_and_cost(cost_function, params,
                                                 wires=range(qubits), reps=reps, 

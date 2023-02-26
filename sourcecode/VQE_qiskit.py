@@ -3,6 +3,8 @@ from pennylane import numpy as np
 import argparse
 import qiskit
 from qiskit import *
+from qiskit import IBMQ
+provider = IBMQ.enable_account('6e4f256437ce3d5584d80d4225e0a36d6130e4de2c02729f534738aa2af1339597611d259697cea67e328ad92c5e0904cbff534000873532d8d4ede831471985')
 
 def create_hamiltonian(source_path):
     """
@@ -62,7 +64,11 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     # Define the device
-    dev = qml.device(args.device, wires=qubits)
+    if args.device == "qiskit.aer":
+        dev = qml.device(args.device, wires=qubits, method = "statevector")
+
+    if args.device == "qasm":
+        dev = qml.device('qiskit.ibmq', wires=qubits, backend='ibmq_qasm_simulator', provider=provider)
 
     # Define the qnode
     @qml.qnode(dev) 
@@ -83,7 +89,7 @@ if __name__ == "__main__":
                 qml.RY(params[pind], wires=wire)
                 qml.RZ(params[pind+1], wires=wire)
                 pind += 2
-
+        
         return qml.expval(H)
     
     def cost_function(params, **arg):

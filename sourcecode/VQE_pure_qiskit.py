@@ -1,6 +1,9 @@
 import pennylane as qml
 from pennylane import numpy as np
 import argparse
+import qiskit
+from qiskit import *
+from pennylane_qiskit import vqe_runner, upload_vqe_runner
 
 def create_hamiltonian(source_path):
     """
@@ -46,7 +49,7 @@ def create_hamiltonian(source_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--device', type=str, default="lightning.qubit")
+    parser.add_argument('--device', type=str, default="qiskit.aer")
     parser.add_argument('--source_path', type=str, default='part0.txt')
     parser.add_argument('--positive_energy_flag', action='store_true')
     parser.add_argument('--reps', type=int, default=1)
@@ -56,14 +59,14 @@ if __name__ == "__main__":
     H = create_hamiltonian(args.source_path)
     wires = list(H.wires)
     qubits=len(wires)
-    print(qml.about())
+
     np.random.seed(42)
 
     # Define the device
     #dev = qml.device(args.device, wires=qubits)
-    dev = qml.device("lightning.gpu", wires=qubits)
+    program_id = upload_vqe_runner(hub="ibm-q", group="open", project="main")
     # Define the qnode
-    @qml.qnode(dev, diff_method="adjoint") 
+    #@qml.qnode(dev) 
     def circuit(params, wires, reps, skip_final_rotation_layer):
         pind = 0
         for _ in range(reps):
@@ -97,23 +100,38 @@ if __name__ == "__main__":
 
     # Define the initial values of the circuit parameters
     params = np.random.normal(0, np.pi, nr_params)
-
+    print(params)
+    print(params[0])
+    qc = circuit(params=params, wires=wires, reps = args.reps, skip_final_rotation_layer= args.skip_final_rotation_layer)
     # Define the optimizer
     optimizer = qml.AdamOptimizer(stepsize=0.1)
 
+    job = vqe_runner(
+            program_id=program_id,
+            backend="ibmq_qasm_simulator",
+            hamiltonian=H,
+            ansatz=circuit,
+            x0=params,
+            shots=1024,
+            optimizer="SPSA",
+            optimizer_config={"maxiter": 40},
+            kwargs={"hub": "ibm-q", "group": "open", "project": "main"})
+
     # Optimize the circuit parameters and compute the energy
-    prev_energy = 0
-    for n in range(1000):
-        params, energy = optimizer.step_and_cost(cost_function, params,
-                                                wires=range(qubits), reps=args.reps, 
-                                                skip_final_rotation_layer=args.skip_final_rotation_layer)
+    print(job)
+    
+    # prev_energy = 0
+    # for n in range(1000):
+    #     params, energy = optimizer.step_and_cost(cost_function, params,
+    #                                             wires=range(qubits), reps=args.reps, 
+    #                                             skip_final_rotation_layer=args.skip_final_rotation_layer)
 
         
-        if args.positive_energy_flag:
-            energy *= -1
+    #     if args.positive_energy_flag:
+    #         energy *= -1
         
-        print("step = {:},  E = {:.8f}".format(n, energy))
-        if abs(energy - prev_energy) < 0.0000000005: # depending on precision
-            break
-        prev_energy = energy
+    #     print("step = {:},  E = {:.8f}".format(n, energy))
+    #     if abs(energy - prev_energy) < 0.0000000005: # depending on precision
+    #         break
+    #     prev_energy = energy
 
