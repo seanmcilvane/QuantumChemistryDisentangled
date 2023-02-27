@@ -11,12 +11,13 @@ from qiskit.circuit import Parameter
 from qiskit.algorithms.optimizers import COBYLA, SPSA, ADAM
 from qiskit.circuit.library import EfficientSU2
 #from qiskit_nature.second_q.algorithms import GroundStateEigensolver
-from qiskit.algorithms.minimum_eigensolvers import VQE
+#from qiskit.algorithms.minimum_eigensolvers import VQE
 from qiskit_ibm_runtime import QiskitRuntimeService, Estimator, Session, Options
+from qiskit.utils import QuantumInstance
 
 service = QiskitRuntimeService()
 
-backend = "ibmq_qasm_simulator"
+#backend = "ibmq_qasm_simulator"
 
 from dataclasses import dataclass
 @dataclass
@@ -121,7 +122,7 @@ if __name__ == "__main__":
                 quantum_circuit.rz(params[pind+1], qubit)
                 pind += 2
     # influenced by https://quantumcomputing.stackexchange.com/questions/12080/evaluating-expectation-values-of-operators-in-qiskit
-        # backend = Aer.get_backend('qasm_simulator')
+        # \backend = Aer.get_backend('qasm_simulator')
         # q_instance = QuantumInstance(backend, shots=1024)
 
         # psi = CircuitStateFn(quantum_circuit)
@@ -152,7 +153,7 @@ if __name__ == "__main__":
         nr_params -= num_of_qubits*2
 
     # Define the initial values of the circuit parameters
-    params = np.random.normal(0, np.pi, nr_params*2)
+    params = np.random.normal(0, np.pi, int(nr_params*3/2))
     #print(params)
 
     lazy = QuantumCircuit(num_of_qubits, num_of_qubits)
@@ -178,23 +179,43 @@ if __name__ == "__main__":
                             reps = args.reps,
                             skip_final_rotation_layer = args.skip_final_rotation_layer)
 
-    optimizer = SPSA(maxiter=150)
-    var_form = EfficientSU2(H.num_qubits, entanglement="linear")
+    optimizer = ADAM(maxiter=1000, lr = 0.1)
+    var_form = EfficientSU2(H.num_qubits, entanglement = "linear", skip_final_rotation_layer =True)
     #estim = Estimator(circuits = [var_form], observables = H)
+    
 
 
-    with Session(service=service, backend=backend) as session:
-        options = Options()
-        options.optimization_level = 3
+    # print(params)
+    backend = Aer.get_backend('qasm_simulator')
 
-        # vqe = VQE(Estimator(session=session, options=options),
-        #             var_form, optimizer, callback=log.update, initial_point=params)
-        
-        vqe = VQE(Estimator(session=session, options=options),
-            var_form, optimizer, initial_point=params)
-        result = vqe.compute_minimum_eigenvalue(H)
+    q_instance = QuantumInstance(backend, shots=1024)
 
-        print(result.optimal_value)
+    print(len(params))
+    a = VQE(ansatz = var_form,
+                            optimizer = optimizer,
+                            initial_point = params,
+                            quantum_instance = q_instance)
+    
+    print("hi")
+    res = a.compute_minimum_eigenvalue(H)  
+    print('hi2')  
+    print(res.optimal_value)
+    params = res.optimal_parameters
+    print("hi3")
+    print(a.get_energy_evaluation(H)(list(params.values())))
+
+    # with Session(service=service, backend=backend) as session:
+    #     options = Options()
+    #     options.optimization_level = 3
+
+    #     # vqe = VQE(Estimator(session=session, options=options),
+    #     #             var_form, optimizer, callback=log.update, initial_point=params)
+    #     print("hi")
+    #     vqe = VQE(Estimator(session=session, options=options),
+    #         var_form, optimizer, callback=log.update, initial_point=params)
+    #     #result = vqe.compute_minimum_eigenvalue(H)
+
+    #     print(vqe.get_energy_evaluation(H)(vqe.optimal_params))
 
     # es = BaseEstimator()
 
