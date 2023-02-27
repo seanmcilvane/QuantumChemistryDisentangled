@@ -173,8 +173,6 @@ if __name__ == "__main__":
     #                 noise_model=NOISE_MODEL,
     #                 measurement_error_mitigation_cls=CompleteMeasFitter)
 
-    backend = Aer.get_backend('qasm_simulator')
-
     ansatz_circuit = ansatz(params = params,
                             num_of_qubits = num_of_qubits,
                             reps = args.reps,
