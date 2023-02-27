@@ -7,7 +7,10 @@ from qiskit import QuantumCircuit
 from pennylane_qiskit import vqe_runner, upload_vqe_runner
 from qiskit.opflow.primitive_ops import PauliSumOp
 from qiskit.primitives import Estimator
-from qiskit_nature.second_q.algorithms import GroundStateEigensolver
+from qiskit.circuit import Parameter
+from qiskit.algorithms.optimizers import COBYLA, SPSA, ADAM
+from qiskit.circuit.library import EfficientSU2
+#from qiskit_nature.second_q.algorithms import GroundStateEigensolver
 
 def create_hamiltonian(source_path):
     """
@@ -79,6 +82,7 @@ if __name__ == "__main__":
     program_id = upload_vqe_runner(hub="ibm-q", group="open", project="main")
     # Define the qnode
     #@qml.qnode(dev) 
+    
     def ansatz(params, num_of_qubits, reps, skip_final_rotation_layer):
         pind = 0
         quantum_circuit = QuantumCircuit(num_of_qubits, num_of_qubits)
@@ -103,6 +107,7 @@ if __name__ == "__main__":
         #return qml.expval(H)
         return quantum_circuit
     
+    
     def cost_function(params, **arg):
         
         
@@ -119,20 +124,53 @@ if __name__ == "__main__":
     # Define the initial values of the circuit parameters
     params = np.random.normal(0, np.pi, nr_params)
     print(params)
+
+    lazy = QuantumCircuit(num_of_qubits, num_of_qubits)
+    theta = Parameter('theta')
+    for _ in range(1):
+            for qubit in range(num_of_qubits):
+                lazy.ry(theta, qubit)
+                lazy.rz(theta, qubit)
+             
+          
+            for qubit in range(0, num_of_qubits-1):
+                lazy.cx(qubit, qubit+1)
+
+    para_lazy = [lazy.bind_parameters({theta : n}) for n in params]
+
+    # qi = QuantumInstance(backend,
+    #                 coupling_map=coupling_map,
+    #                 noise_model=NOISE_MODEL,
+    #                 measurement_error_mitigation_cls=CompleteMeasFitter)
+
     backend = Aer.get_backend('qasm_simulator')
 
-    a = VQE(ansatz = ansatz(params = params,
+    ansatz_circuit = ansatz(params = params,
                             num_of_qubits = num_of_qubits,
                             reps = args.reps,
-                            skip_final_rotation_layer = args.skip_final_rotation_layer),
-                            optimizer = None,
-                            initial_point = params,
-                            expectation = H,
-                            quantum_instance = backend)
+                            skip_final_rotation_layer = args.skip_final_rotation_layer)
+
+    optimizer = SPSA(maxiter=100)
+    var_form = EfficientSU2(H.num_qubits, entanglement="linear")
+    b = VQE(var_form, optimizer=optimizer,quantum_instance = backend)
 
 
-    a.compute_minimum_eigenvalue(H)
-    print(a.optimal_value)
+
+    # a = VQE(ansatz = para_lazy,
+    #                         optimizer = None,
+    #                         initial_point = params,
+    #                         expectation = H,
+    #                         quantum_instance = backend)
+
+
+    
+    
+
+    res = b.get_energy_evaluation(H)
+    res
+    print(res)
+    #print(b.energy_evaluation(params))
+    #print(b.optimal_value)
     #qc = circuit(params=params, wires=wires, reps = args.reps, skip_final_rotation_layer= args.skip_final_rotation_layer)
     # Define the optimizer
     #optimizer = qml.AdamOptimizer(stepsize=0.1)
