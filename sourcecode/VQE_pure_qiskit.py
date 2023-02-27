@@ -6,11 +6,29 @@ from qiskit import *
 from qiskit import QuantumCircuit
 from pennylane_qiskit import vqe_runner, upload_vqe_runner
 from qiskit.opflow.primitive_ops import PauliSumOp, CircuitOp
-from qiskit.primitives import Estimator
+#from qiskit.primitives import Estimator
 from qiskit.circuit import Parameter
 from qiskit.algorithms.optimizers import COBYLA, SPSA, ADAM
 from qiskit.circuit.library import EfficientSU2
 #from qiskit_nature.second_q.algorithms import GroundStateEigensolver
+from qiskit.algorithms.minimum_eigensolvers import VQE
+from qiskit_ibm_runtime import QiskitRuntimeService, Estimator, Session, Options
+
+service = QiskitRuntimeService()
+
+backend = "ibmq_qasm_simulator"
+
+from dataclasses import dataclass
+@dataclass
+class VQELog:
+    values: list
+    parameters: list
+    def update(self, count, parameters, mean, _metadata):
+        self.values.append(mean)
+        self.parameters.append(parameters)
+        print(f"Running circuit {count} of ~350", end="\r", flush=True)
+
+log = VQELog([],[])
 
 def create_hamiltonian(source_path):
     """
@@ -134,8 +152,8 @@ if __name__ == "__main__":
         nr_params -= num_of_qubits*2
 
     # Define the initial values of the circuit parameters
-    params = np.random.normal(0, np.pi, nr_params)
-    print(params)
+    params = np.random.normal(0, np.pi, nr_params*2)
+    #print(params)
 
     lazy = QuantumCircuit(num_of_qubits, num_of_qubits)
     theta = Parameter('theta')
@@ -162,11 +180,27 @@ if __name__ == "__main__":
                             reps = args.reps,
                             skip_final_rotation_layer = args.skip_final_rotation_layer)
 
-    optimizer = SPSA(maxiter=100)
+    optimizer = SPSA(maxiter=150)
     var_form = EfficientSU2(H.num_qubits, entanglement="linear")
-    b = VQE(var_form, optimizer=optimizer,quantum_instance = backend)
+    #estim = Estimator(circuits = [var_form], observables = H)
 
 
+    with Session(service=service, backend=backend) as session:
+        options = Options()
+        options.optimization_level = 3
+
+        # vqe = VQE(Estimator(session=session, options=options),
+        #             var_form, optimizer, callback=log.update, initial_point=params)
+        
+        vqe = VQE(Estimator(session=session, options=options),
+            var_form, optimizer, initial_point=params)
+        result = vqe.compute_minimum_eigenvalue(H)
+
+        print(result.optimal_value)
+
+    # es = BaseEstimator()
+
+    # print(VQE.find_minimum(initial_point=params, ansatz=ansatz_circuit, cost_fn=None, optimizer=None, gradient_fn=None))
 
     # a = VQE(ansatz = para_lazy,
     #                         optimizer = None,
@@ -178,9 +212,18 @@ if __name__ == "__main__":
 
 
 
-    res = b.get_energy_evaluation(H)
-    res
-    print(res)
+    # res = b.construct_expectation(var_form.parameters, H, return_expectation=True)
+    # print(res[0])
+    # print(res[1])
+    # vqe_calc = b.compute_minimum_eigenvalue(H)
+    # vqe_result = vqe_calc.optimal_value
+    # print(vqe_result)
+
+    # res = b.get_energy_evaluation(H)
+    # print(res(np.zeros(var_form.num_parameters)))
+
+    #res = b.find_minimum(nr_params)
+
     #print(b.energy_evaluation(params))
     #print(b.optimal_value)
     #qc = circuit(params=params, wires=wires, reps = args.reps, skip_final_rotation_layer= args.skip_final_rotation_layer)
