@@ -4,7 +4,7 @@ from pennylane import numpy as np
 from VQE_braket import create_hamiltonian
 
 
-def run_vqe(device:str, source_path:str, positive_energy_flag:str, reps:int, skip_final_rotation_layer:str):
+def run_vqe(cloud_provider: str, device:str, source_path:str, positive_energy_flag:str, reps:int, skip_final_rotation_layer:str):
 
     H = create_hamiltonian(source_path)
 
@@ -14,12 +14,29 @@ def run_vqe(device:str, source_path:str, positive_energy_flag:str, reps:int, ski
     np.random.seed(42)
 
     # Define the device
+    
     if device == "braket.aws.qubit":
-        dev = qml.device(device, 
-                        device_arn='arn:aws:braket:::device/quantum-simulator/amazon/sv1',
-                        wires=qubits)
+        if cloud_provider == "sv1":
+            dev = qml.device(device, 
+                device_arn='arn:aws:braket:::device/quantum-simulator/amazon/sv1',
+                wires=qubits)
+        
+        elif cloud_provider=="lucy":
+            dev = qml.device(device, 
+                device_arn='arn:aws:braket:eu-west-2::device/qpu/oqc/Lucy',
+                wires=qubits,
+                shots = 1024)
+        else:
+            dev = qml.device(device, 
+                device_arn='arn:aws:braket:::device/qpu/ionq/ionQdevice',
+                wires=qubits,
+                shots = 1024)
 
-    else: 
+   
+
+
+    elif cloud_provider == "pennylane":
+
         dev = qml.device(device, wires=qubits)
 
     # Define the qnode
