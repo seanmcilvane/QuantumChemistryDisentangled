@@ -5,9 +5,18 @@ from qiskit.algorithms import VQE
 from qiskit import *
 from qiskit import QuantumCircuit
 from pennylane_qiskit import vqe_runner, upload_vqe_runner
-from qiskit.opflow.primitive_ops import PauliSumOp
+from qiskit.opflow.primitive_ops import PauliSumOp, CircuitOp
 from qiskit.primitives import Estimator
 from qiskit_nature.second_q.algorithms import GroundStateEigensolver
+from qiskit.opflow import PauliExpectation, CircuitSampler, StateFn
+from qiskit.utils import QuantumInstance
+from qiskit.opflow.state_fns import CircuitStateFn
+
+
+IBMQ.load_account()
+
+
+
 
 def create_hamiltonian(source_path):
     """
@@ -35,9 +44,9 @@ def create_hamiltonian(source_path):
             coef_op[0] = op
             coef_op[1] = coef
             #op = [o for o in coef_op[1].strip()]
-            print(coef_op)
-            print(coef)
-            print(op)
+            # print(coef_op)
+            # print(coef)
+            # print(op)
 
             formatted_op = 0
 
@@ -81,7 +90,7 @@ if __name__ == "__main__":
     #@qml.qnode(dev) 
     def ansatz(params, num_of_qubits, reps, skip_final_rotation_layer):
         pind = 0
-        quantum_circuit = QuantumCircuit(num_of_qubits, num_of_qubits)
+        quantum_circuit = QuantumCircuit(num_of_qubits)
 
         for _ in range(reps):
             for qubit in range(num_of_qubits):
@@ -98,8 +107,20 @@ if __name__ == "__main__":
                 quantum_circuit.ry(params[pind], qubit)
                 quantum_circuit.rz(params[pind+1], qubit)
                 pind += 2
-        
-        quantum_circuit.measure_all()
+    # influenced by https://quantumcomputing.stackexchange.com/questions/12080/evaluating-expectation-values-of-operators-in-qiskit
+        # backend = Aer.get_backend('qasm_simulator') 
+        # q_instance = QuantumInstance(backend, shots=1024)
+
+        # psi = CircuitStateFn(quantum_circuit)
+
+        # measurable_expression = StateFn(H, is_measurement=True).compose(psi) 
+
+        # expectation = PauliExpectation().convert(measurable_expression)  
+
+        # sampler = CircuitSampler(q_instance).convert(expectation) 
+        # sampler.eval().real
+
+
         #return qml.expval(H)
         return quantum_circuit
     
@@ -118,7 +139,7 @@ if __name__ == "__main__":
 
     # Define the initial values of the circuit parameters
     params = np.random.normal(0, np.pi, nr_params)
-    print(params)
+    # print(params)
     backend = Aer.get_backend('qasm_simulator')
 
     a = VQE(ansatz = ansatz(params = params,
