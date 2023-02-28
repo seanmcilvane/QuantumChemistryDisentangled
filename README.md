@@ -1,7 +1,7 @@
 # QuantumChemistryDisentangled
 
 ## https://qhack2023.gitbook.io/quantum-chemistry-disentangled/
-
+“This website contains official submission description of the Quantum Chemistry Disentangled project. Please follow the link”
 
 
 ## Usage
