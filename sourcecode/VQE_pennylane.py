@@ -135,8 +135,8 @@ if __name__ == "__main__":
 
 
         coef = 1
-        #if args.positive_energy_flag:
-            #coef = -1
+        if args.positive_energy_flag:
+            coef = -1
         return coef * h_expval
 
     nr_params = (args.reps+1)*len(wires)*2

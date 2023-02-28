@@ -176,8 +176,8 @@ if __name__ == "__main__":
         params, energy = optimizer.step_and_cost(cost_function, params   ,  wires=range(qubits), reps=args.reps,
                                                 skip_final_rotation_layer=args.skip_final_rotation_layer)
 
-        #if args.positive_energy_flag:
-            #energy *= -1
+        if args.positive_energy_flag:
+            energy *= -1
 
         print("step = {:},  E = {:.8f}".format(n, energy))
         if abs(energy - prev_energy) < 0.0000000005: # depending on precision
