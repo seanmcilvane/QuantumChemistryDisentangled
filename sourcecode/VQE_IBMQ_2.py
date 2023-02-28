@@ -5,6 +5,13 @@ from pennylane.transforms import mitigate_with_zne
 import time
 from qiskit import IBMQ
 
+#provider = IBMQ.load_account()
+#provider = IBMQ.get_provider(hub='ibm-q', group='open' ,project='main')
+
+
+
+
+
 
 def create_hamiltonian(source_path):
     """
@@ -75,11 +82,13 @@ if __name__ == "__main__":
     H = create_hamiltonian(args.source_path)
     wires = list(H.wires)
     qubits=len(wires)
+    n_wires = qubits
+
 
     np.random.seed(42)
 
     # Define the device
-    dev = qml.device('qiskit.aer', wires=qubits, backend='unitary_simulator')
+    dev = qml.device('qiskit.ibmq', wires = wires, backend = 'ibmq_qasm_simulator')
 
     # Define the qnode
     def circuit(params, wires, reps, skip_final_rotation_layer):
@@ -102,6 +111,21 @@ if __name__ == "__main__":
         
 
         return qml.expval(H)
+    
+    n_features = 2
+
+    # def circuit1(params, x=None):
+    #     for i in range(n_wires):
+    #         qml.RX(1, wires=i)
+    #         qml.Rot(*params[0, 0, i], wires=i)
+
+    #     qml.CZ(wires=[0, 1])
+    #     qml.CZ(wires=[1, 2])
+    #     qml.CZ(wires=[1, 3])
+
+    #     for i in range(n_wires):
+    #         qml.Rot(*params[0, 1, i], wires=i)
+    #     return qml.expval(qml.PauliZ(0)), qml.expval(qml.PauliZ(1)), qml.expval(qml.PauliZ(2))
     
     qnode = qml.QNode(circuit, dev)
 
@@ -131,12 +155,9 @@ if __name__ == "__main__":
         ms = (end-start)
         print(f"Elapsed {ms:.03f} secs.")
 
-
-
-
         coef = 1
-        #if args.positive_energy_flag:
-            #coef = -1
+        if args.positive_energy_flag:
+            coef = -1
         return coef * h_expval
 
     nr_params = (args.reps+1)*len(wires)*2
@@ -152,8 +173,7 @@ if __name__ == "__main__":
     # Optimize the circuit parameters and compute the energy
     prev_energy = 0
     for n in range(1000):
-        params, energy = optimizer.step_and_cost(cost_function, params,
-                                                wires=range(qubits), reps=args.reps,
+        params, energy = optimizer.step_and_cost(cost_function, params   ,  wires=range(qubits), reps=args.reps,
                                                 skip_final_rotation_layer=args.skip_final_rotation_layer)
 
         #if args.positive_energy_flag:
