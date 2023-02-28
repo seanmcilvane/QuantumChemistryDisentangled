@@ -43,11 +43,11 @@ python VQE.py --device aspen.m2 --part 2 --positive_energy_flag
 
 ## Displaying Resuts
 
-Open the Example.ipynb notebook where functions plot_results and print_results are defined to help you visualize the results. 
+Open the Example.ipynb notebook where functions plot_results and print_results are defined to help you visualize the results. \
 
 Output for plot_results
 
-
+![alt text](https://github.com/seanmcilvane/QuantumChemistryBenchmark/blob/main/results/beh2/part0/result_plot_0.png?raw=true)
 
 
 Output for print_results
