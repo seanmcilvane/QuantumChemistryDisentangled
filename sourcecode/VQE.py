@@ -69,12 +69,12 @@ if __name__ == "__main__":
                             device_arn = 'arn:aws:braket:::device/quantum-simulator/amazon/sv1',
                             wires = qubits) 
 
-    elif args.device == "aspen-m2":
+    elif args.device == "aspen.m2":
         device = qml.device('braket.aws.qubit', 
                             device_arn = 'arn:aws:braket:us-west-1::device/qpu/rigetti/Aspen-M-2',
                             wires = qubits) 
     
-    elif args.device == "aspen-m3":
+    elif args.device == "aspen.m3":
         device = qml.device('braket.aws.qubit', 
                             device_arn = 'arn:aws:braket:us-west-1::device/qpu/rigetti/Aspen-M-3',
                             wires = qubits) 
