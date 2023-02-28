@@ -42,7 +42,8 @@ if __name__ == "__main__":
                         "lucy" : ["braket", "lucy"],
                         "sv1": ["braket", "sv1"],
                         "aspen.m2" : ["braket", "aspen-m2"],
-                        "aspen.m3" : ["braket", "aspen-m3"]}
+                        "aspen.m3" : ["braket", "aspen-m3"],
+                        "qiskit.ibmq": ["ibm", "qasm_simulator"] }
   
     # Define the device
     if args.device == "default.qubit":
@@ -77,11 +78,16 @@ if __name__ == "__main__":
         device = qml.device('braket.aws.qubit', 
                             device_arn = 'arn:aws:braket:us-west-1::device/qpu/rigetti/Aspen-M-3',
                             wires = qubits) 
+        
+    elif args.device== "qiskit.ibmq":
+        device = qml.device('qiskit.ibmq', wires = wires, backend = 'ibmq_qasm_simulator')
 
     else:
         print("not valid device, resorting to default.qubit")
         device = qml.device("default.qubit",
                             wires=qubits)
+        
+
     
     
     print(device)

@@ -39,6 +39,12 @@ def run_vqe(cloud_provider: str, device:str, source_path:str, positive_energy_fl
 
         dev = qml.device(device, wires=qubits)
 
+    elif cloud_provider == "ibm":
+        if device== "ibmq":
+            print('hi')
+            dev = qml.device('qiskit.ibmq', wires = wires, backend = 'ibmq_qasm_simulator')
+
+
     # Define the qnode
     @qml.qnode(dev) 
     def circuit(params, wires, reps, skip_final_rotation_layer):
@@ -79,7 +85,7 @@ def run_vqe(cloud_provider: str, device:str, source_path:str, positive_energy_fl
     params = np.random.normal(0, np.pi, nr_params)
 
     # Define the optimizer
-    optimizer = qml.AdamOptimizer(stepsize=0.1)
+    optimizer = qml.AdamOptimizer(stepsize=0.5)
 
     # Optimize the circuit parameters and compute the energy
     prev_energy = 0
@@ -89,7 +95,7 @@ def run_vqe(cloud_provider: str, device:str, source_path:str, positive_energy_fl
     energy_list = []
 
     
-    for n in range(5):
+    for n in range(15):
         params, energy = optimizer.step_and_cost(cost_function, params,
                                                 wires=range(qubits), reps=reps, 
                                                 skip_final_rotation_layer=skip_final_rotation_layer)
@@ -101,7 +107,7 @@ def run_vqe(cloud_provider: str, device:str, source_path:str, positive_energy_fl
         n_list.append(n)
         energy_list.append(energy)
         
-        #print("step = {:},  E = {:.8f}".format(n, energy))
+        print("step = {:},  E = {:.8f}".format(n, energy))
         if abs(energy - prev_energy) < 0.0000000005: # depending on precision
            break
         prev_energy = energy
