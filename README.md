@@ -43,7 +43,7 @@ python VQE.py --device aspen.m2 --part 2 --positive_energy_flag
 
 ## Displaying Resuts
 
-Open the Example.ipynb notebook where functions plot_results and print_results are defined to help you visualize the results.
+Open the Example.ipynb notebook where functions plot_results and print_results are defined to help you visualize the results. Datasets are viewed in results folder subdivided into different hamiltonian datasets.
 
 Output for plot_results
 
