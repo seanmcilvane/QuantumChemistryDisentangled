@@ -14,6 +14,18 @@ Using on a different device and on different part (Note that the lightning.qubit
 ```
 python VQE.py --device lightning.qubit --part 3 --postive_energy_flag
 ```
+## List of compatible devices
+
+default.qubit : Pennylane's default.qubit simulator
+lightning.qubit : Pennylane's lightning.qubit simulator that supports adjoint differentiation, requires Linux
+ionqdevice : Use AWS Braket to run on IonQ's ionQdevice
+lucy: Use AWS braket to run on OQC's lucy
+sv1: Use AWS braket to run on AWS's stave vector simulator
+aspen.m2 : Use AWS Braket to run on Rigetti's Aspen-M-2
+aspen.m3 : Use AWS Braket to run on Rigetti's Aspen-M-3
+qiskit.ibmq: Use IBMQ to access the ibmq qasm simulator
+
+If a not compatible device is specified, Pennylane's default.qubit will be used. 
 
 ## Using AWS Braket
 
