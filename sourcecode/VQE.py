@@ -37,7 +37,7 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     file_manager = {"default.qubit": ["pennylane", "default-qubit"],
-                        "lightning.qubit": ["nvidia", "lightning-qubit"],
+                        "lightning.qubit": ["pennylane", "lightning-qubit"],
                         "ionqdevice": ["braket", "ionqdevice"],
                         "lucy" : ["braket", "lucy"],
                         "sv1": ["braket", "sv1"],
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         
     elif args.device== "qiskit.ibmq":
         device = qml.device('qiskit.ibmq', wires = wires, backend = 'ibmq_qasm_simulator')
-
+    
     else:
         print("not valid device, resorting to default.qubit")
         device = qml.device("default.qubit",
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     n_list = []
     energy_list = []
 
-    for n in range(1000):
+    for n in range(100):
         params, energy = optimizer.step_and_cost(cost_function, params,
                                                 wires=range(qubits), reps=args.reps, 
                                                 skip_final_rotation_layer=args.skip_final_rotation_layer)
