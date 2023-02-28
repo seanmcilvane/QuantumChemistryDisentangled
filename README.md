@@ -47,7 +47,7 @@ Open the Example.ipynb notebook where functions plot_results and print_results a
 
 Output for plot_results
 
-![alt text](https://github.com/seanmcilvane/QuantumChemistryBenchmark/blob/main/results/beh2/part0/result_plot_0.png?raw=true)
+![alt text](/results/beh2/part0/result_plot_0.png?raw=true)
 
 
 Output for print_results
