@@ -47,7 +47,13 @@ Open the Example.ipynb notebook where functions plot_results and print_results a
 
 Output for plot_results
 
-![alt text](./results/beh2/part0/result_plot_0.png?raw=true)
+![Alt text](./results/beh2/part0/result_plot_0.png?raw=true)
 
 
 Output for print_results
+
+Results for Hamiltonian Part 0 \
+number of iterations final energy run time \
+Pennylane default.qubit: 187 4.339227753965866 58.24501719999989 \
+Pennylane lightning.qubit: 290 4.996179602372166 66.29783706700027 \
+Braket sv1: 187 4.3392277539658695 779.421748963
