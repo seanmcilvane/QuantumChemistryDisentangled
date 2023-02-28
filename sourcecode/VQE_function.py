@@ -88,7 +88,8 @@ def run_vqe(cloud_provider: str, device:str, source_path:str, positive_energy_fl
     n_list = []
     energy_list = []
 
-    for n in range(1000):
+    
+    for n in range(5):
         params, energy = optimizer.step_and_cost(cost_function, params,
                                                 wires=range(qubits), reps=reps, 
                                                 skip_final_rotation_layer=skip_final_rotation_layer)

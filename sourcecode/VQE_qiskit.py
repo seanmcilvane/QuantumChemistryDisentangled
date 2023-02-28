@@ -79,13 +79,14 @@ if __name__ == "__main__":
 
     # Define the device
     if args.device == "qiskit.aer":
-        dev = qml.device(args.device, wires=qubits, method = "statevector")
+        #dev = qml.device(args.device, wires=qubits, method = "statevector")
+        dev = qml.device(args.device, wires=qubits)
 
     if args.device == "qasm":
         dev = qml.device('qiskit.ibmq', wires=qubits, backend='ibmq_qasm_simulator', provider=provider)
 
     # Define the qnode
-    @qml.qnode(dev) 
+    @qml.qnode(dev, diff_method="parameter-shift") 
     def circuit(params, wires, reps, skip_final_rotation_layer):
         pind = 0
         for _ in range(reps):

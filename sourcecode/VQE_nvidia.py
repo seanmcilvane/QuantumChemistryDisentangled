@@ -1,6 +1,10 @@
 import pennylane as qml
 from pennylane import numpy as np
 import argparse
+from timeit import default_timer as timer
+import json
+
+start = timer()
 
 def create_hamiltonian(source_path):
     """
@@ -27,8 +31,22 @@ def create_hamiltonian(source_path):
             op = [o for o in coef_op[1].strip()]
 
             #creating a pennylane format operator
-            op_penny =  qml.Identity(wires=0)
+          
             for i, pauli in enumerate(op):
+
+                if i == 0:
+                  
+                    if pauli == 'I':
+                        op_penny = qml.Identity(wires=i) 
+                    elif pauli == 'X':
+                        op_penny = qml.PauliX(wires=i) 
+                    elif pauli == 'Y':
+                        op_penny = qml.PauliY(wires=i) 
+                    elif pauli == 'Z':
+                        op_penny = qml.PauliZ(wires=i)   
+                    continue
+
+
                 if pauli == 'I':
                     op_penny = op_penny @ qml.Identity(wires=i) 
                 elif pauli == 'X':
@@ -61,7 +79,7 @@ if __name__ == "__main__":
 
     # Define the device
     #dev = qml.device(args.device, wires=qubits)
-    dev = qml.device("lightning.gpu", wires=qubits)
+    dev = qml.device("lightning.qubit", wires=qubits)
     # Define the qnode
     @qml.qnode(dev, diff_method="adjoint") 
     def circuit(params, wires, reps, skip_final_rotation_layer):
@@ -103,6 +121,9 @@ if __name__ == "__main__":
 
     # Optimize the circuit parameters and compute the energy
     prev_energy = 0
+    n_list = []
+    energy_list = []
+
     for n in range(1000):
         params, energy = optimizer.step_and_cost(cost_function, params,
                                                 wires=range(qubits), reps=args.reps, 
@@ -112,8 +133,17 @@ if __name__ == "__main__":
         if args.positive_energy_flag:
             energy *= -1
         
+        n_list.append(n)
+        energy_list.append(energy)
+
         print("step = {:},  E = {:.8f}".format(n, energy))
         if abs(energy - prev_energy) < 0.0000000005: # depending on precision
             break
         prev_energy = energy
-
+    
+    end = timer()
+    results_dict = {"n_iterations": n_list,
+                     "energy_list": energy_list,
+                     "run_time": end-start}
+    with open(f'/home/ec2-user/part0/nvidia-lightning.txt','w+') as results_file:
+        results_file.write(json.dumps(results_dict))

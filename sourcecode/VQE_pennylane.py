@@ -79,12 +79,8 @@ if __name__ == "__main__":
     np.random.seed(42)
 
     # Define the device
-
     dev = qml.device(args.device, wires=qubits)
   
-
-
-
     # Define the qnode
     def circuit(params, wires, reps, skip_final_rotation_layer):
         pind = 0
@@ -139,8 +135,8 @@ if __name__ == "__main__":
 
 
         coef = 1
-        if args.positive_energy_flag:
-            coef = -1
+        #if args.positive_energy_flag:
+            #coef = -1
         return coef * h_expval
 
     nr_params = (args.reps+1)*len(wires)*2
@@ -160,9 +156,8 @@ if __name__ == "__main__":
                                                 wires=range(qubits), reps=args.reps,
                                                 skip_final_rotation_layer=args.skip_final_rotation_layer)
 
-        print("did optimize")
-        if args.positive_energy_flag:
-            energy *= -1
+        #if args.positive_energy_flag:
+            #energy *= -1
 
         print("step = {:},  E = {:.8f}".format(n, energy))
         if abs(energy - prev_energy) < 0.0000000005: # depending on precision
