@@ -5,6 +5,7 @@ import qiskit
 from qiskit import *
 from pennylane_qiskit import vqe_runner, upload_vqe_runner
 
+
 def create_hamiltonian(source_path):
     """
     Creates lists of coefficients and Pauli strings operators from .txt file
@@ -50,7 +51,7 @@ def create_hamiltonian(source_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='')
     parser.add_argument('--device', type=str, default="qiskit.aer")
-    parser.add_argument('--source_path', type=str, default='part0.txt')
+    parser.add_argument('--source_path', type=str, default='part3.txt')
     parser.add_argument('--positive_energy_flag', action='store_true')
     parser.add_argument('--reps', type=int, default=1)
     parser.add_argument('--skip_final_rotation_layer', action='store_true')
@@ -99,10 +100,11 @@ if __name__ == "__main__":
         nr_params -= len(wires)*2
 
     # Define the initial values of the circuit parameters
-    params = np.random.normal(0, np.pi, nr_params)
+    params = np.array(np.random.normal(0, np.pi, nr_params))
+    print(params.ndim)
     print(params)
     print(params[0])
-    qc = circuit(params=params, wires=wires, reps = args.reps, skip_final_rotation_layer= args.skip_final_rotation_layer)
+    #qc = circuit(params=params, wires=wires, reps = args.reps, skip_final_rotation_layer= args.skip_final_rotation_layer)
     # Define the optimizer
     optimizer = qml.AdamOptimizer(stepsize=0.1)
 
@@ -110,8 +112,7 @@ if __name__ == "__main__":
             program_id=program_id,
             backend="ibmq_qasm_simulator",
             hamiltonian=H,
-            ansatz=circuit,
-            x0=params,
+            x0= params,
             shots=1024,
             optimizer="SPSA",
             optimizer_config={"maxiter": 40},
@@ -119,6 +120,9 @@ if __name__ == "__main__":
 
     # Optimize the circuit parameters and compute the energy
     print(job)
+    print(job.intermediate_results)
+    print(job.result())
+
     
     # prev_energy = 0
     # for n in range(1000):
