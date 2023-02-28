@@ -46,8 +46,7 @@ python VQE.py --device aspen.m2 --part 2 --positive_energy_flag
 Open the Example.ipynb notebook where functions plot_results and print_results are defined to help you visualize the results.
 
 Output for plot_results
-
-  ![Result Image](/result_plot_0.png)
+![Result Image](/result_plot_0.png)
 
 
 Output for print_results
