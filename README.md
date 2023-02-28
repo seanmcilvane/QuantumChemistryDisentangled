@@ -47,7 +47,7 @@ Open the Example.ipynb notebook where functions plot_results and print_results a
 
 Output for plot_results
 
-![Alt text](./results/beh2/part0/result_plot_0.png?raw=true)
+![Alt text](../results/beh2/part0/result_plot_0.png?raw=true)
 
 
 Output for print_results
